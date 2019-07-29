@@ -4,21 +4,35 @@
 #include <BLEScan.h>
 #include <BLEAdvertisedDevice.h>
 #include <BLEAddress.h>
+#include <BLEUUID.h>
+
+bool hasEnding (std::string const &fullString, std::string const &ending) {
+    if (fullString.length() >= ending.length()) {
+        return (0 == fullString.compare (fullString.length() - ending.length(), ending.length(), ending));
+    } else {
+        return false;
+    }
+}
 
 #define outputPin 13
 
 int scanTime = 5; //In seconds
 BLEScan* pBLEScan;
 
-const BLEAddress myAppleWatch = BLEAddress(std::string("1c:1a:c0:ca:fe:00")); // lower case hex
+const std::string myBoseHeadphones = "038dcafed00d";
 
 class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
     void onResult(BLEAdvertisedDevice advertisedDevice) {
-      if (advertisedDevice.getAddress().equals(myAppleWatch)) {
+      if (advertisedDevice.haveManufacturerData()) {
+        std::string hexManufacturerString = std::string(BLEUtils::buildHexData(nullptr, (uint8_t*)advertisedDevice.getManufacturerData().data(), advertisedDevice.getManufacturerData().length()));
+        if (hasEnding(hexManufacturerString, myBoseHeadphones)) {
           digitalWrite(outputPin, HIGH); // trigger LED
-          Serial.printf("Matched Device: %s \n", advertisedDevice.getAddress().toString().c_str());        
+          Serial.printf("Matched Device: %s \n", advertisedDevice.toString().c_str());   
+        } else {
+          Serial.printf("Other Device: %s \n", advertisedDevice.toString().c_str()); 
+        }     
       } else {
-          Serial.printf("Other Device: %s \n", advertisedDevice.getAddress().toString().c_str()); 
+        Serial.printf("Other Device: %s \n", advertisedDevice.toString().c_str()); 
       }
     }
 };
