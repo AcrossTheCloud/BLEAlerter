@@ -35,12 +35,16 @@
   #include <SoftwareSerial.h>
 #endif
 
+    #define FACTORYRESET_ENABLE         1
+    #define MINIMUM_FIRMWARE_VERSION    "0.6.6"
+    #define MODE_LED_BEHAVIOUR          "MODE"
+
 #include "BluefruitConfig.h"
 
 #define FACTORYRESET_ENABLE     1
 #define NEOPIXEL_VERSION_STRING "Neopixel v2.0"
-#define LED_PIN 6   /* Pin used to drive the NeoPixels */
-#define LED_COUNT 12
+#define LED_PIN 8   /* Pin used to drive the NeoPixels */
+#define LED_COUNT 1
 
 
 Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
@@ -54,10 +58,10 @@ Adafruit_BluefruitLE_UART ble(bluefruitSS, BLUEFRUIT_UART_MODE_PIN,
 */
 
 /* ...or hardware serial, which does not need the RTS/CTS pins. Uncomment this line */
-// Adafruit_BluefruitLE_UART ble(BLUEFRUIT_HWSERIAL_NAME, BLUEFRUIT_UART_MODE_PIN);
+Adafruit_BluefruitLE_UART ble(Serial1, BLUEFRUIT_UART_MODE_PIN);
 
 /* ...hardware SPI, using SCK/MOSI/MISO hardware SPI pins and then user selected CS/IRQ/RST */
-Adafruit_BluefruitLE_SPI ble(BLUEFRUIT_SPI_CS, BLUEFRUIT_SPI_IRQ, BLUEFRUIT_SPI_RST);
+//Adafruit_BluefruitLE_SPI ble(BLUEFRUIT_SPI_CS, BLUEFRUIT_SPI_IRQ, BLUEFRUIT_SPI_RST);
 
 /* ...software SPI, using SCK/MOSI/MISO user-defined SPI pins and then user selected CS/IRQ/RST */
 //Adafruit_BluefruitLE_SPI ble(BLUEFRUIT_SPI_SCK, BLUEFRUIT_SPI_MISO,
@@ -89,19 +93,21 @@ void serial_printf(const char * format, ...) {
 /**************************************************************************/
 void setup(void)
 {
+  while (!Serial);  // required for Flora & Micro
+  delay(500);
+
   Serial.begin(115200);
 
-  // Config Neopixels
-  strip.begin();           // INITIALIZE NeoPixel strip object (REQUIRED)
-  strip.show();            // Turn OFF all pixels ASAP
-  strip.setBrightness(50); // Set BRIGHTNESS to about 1/5 (max = 255)
+  strip.begin();
+  strip.setBrightness(50);
+  strip.show(); // Initialize all pixels to 'off'
 
   /* Initialise the module */
   Serial.print(F("Initialising the Bluefruit LE module: "));
 
   if ( !ble.begin(VERBOSE_MODE) )
   {
-    error(F("Couldn't find Bluefruit, make sure it's in command mode & check wiring?"));
+    error(F("Couldn't find Bluefruit, make sure it's in CoMmanD mode & check wiring?"));
   }
   Serial.println( F("OK!") );
 
@@ -117,28 +123,40 @@ void setup(void)
   /* Disable command echo from Bluefruit */
   ble.echo(false);
 
+  Serial.println("Requesting Bluefruit info:");
+  /* Print Bluefruit information */
+  ble.info();
+
   ble.verbose(false);  // debug info is a little annoying after this point!
 
-    /* Wait for connection */
+  /* Wait for connection */
   while (! ble.isConnected()) {
       delay(500);
   }
 
-  Serial.println(F("***********************"));
+  Serial.println(F("******************************"));
 
-  // Set Bluefruit to DATA mode
+  // LED Activity command is only supported from 0.6.6
+  if ( ble.isVersionAtLeast(MINIMUM_FIRMWARE_VERSION) )
+  {
+    // Change Mode LED Activity
+    Serial.println(F("Change LED activity to " MODE_LED_BEHAVIOUR));
+    ble.sendCommandCheckOK("AT+HWModeLED=" MODE_LED_BEHAVIOUR);
+  }
+
+  // Set module to DATA mode
   Serial.println( F("Switching to DATA mode!") );
   ble.setMode(BLUEFRUIT_MODE_DATA);
 
-  Serial.println(F("***********************"));
-
+  Serial.println(F("******************************"));
 }
 
 void loop()
 {
   // Echo received data
-  if ( ble.isConnected() )
+  while (ble.available()) 
   {
+
     int command = ble.read();
 
     switch (command) {
@@ -151,7 +169,8 @@ void loop()
           break;
        }
     }
-  }
+  } 
+  
 }
 
 
@@ -160,33 +179,36 @@ void commandVersion() {
   sendResponse(NEOPIXEL_VERSION_STRING);
 }
 
-// Rainbow cycle along whole strip. Pass delay time (in ms) between frames.
-void rainbow(int wait) {
-  // Hue of first pixel runs 5 complete loops through the color wheel.
-  // Color wheel has a range of 65536 but it's OK if we roll over, so
-  // just count from 0 to 5*65536. Adding 256 to firstPixelHue each time
-  // means we'll make 5*65536/256 = 1280 passes through this outer loop:
-  for(long firstPixelHue = 0; firstPixelHue < 5*65536; firstPixelHue += 256) {
-    for(int i=0; i<strip.numPixels(); i++) { // For each pixel in strip...
-      // Offset pixel hue by an amount to make one full revolution of the
-      // color wheel (range of 65536) along the length of the strip
-      // (strip.numPixels() steps):
-      int pixelHue = firstPixelHue + (i * 65536L / strip.numPixels());
-      // strip.ColorHSV() can take 1 or 3 arguments: a hue (0 to 65535) or
-      // optionally add saturation and value (brightness) (each 0 to 255).
-      // Here we're using just the single-argument hue variant. The result
-      // is passed through strip.gamma32() to provide 'truer' colors
-      // before assigning to each pixel:
-      strip.setPixelColor(i, strip.gamma32(strip.ColorHSV(pixelHue)));
+// Input a value 0 to 255 to get a color value.
+// The colours are a transition r - g - b - back to r.
+uint32_t Wheel(byte WheelPos) {
+  WheelPos = 255 - WheelPos;
+  if(WheelPos < 85) {
+   return strip.Color(255 - WheelPos * 3, 0, WheelPos * 3);
+  } else if(WheelPos < 170) {
+    WheelPos -= 85;
+   return strip.Color(0, WheelPos * 3, 255 - WheelPos * 3);
+  } else {
+   WheelPos -= 170;
+   return strip.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
+  }
+}
+
+void rainbowCycle(uint8_t wait) {
+  uint16_t i, j;
+ 
+  for(j=0; j<256*5; j++) { // 5 cycles of all colors on wheel
+    for(i=0; i< strip.numPixels(); i++) {
+      strip.setPixelColor(i, Wheel(((i * 256 / strip.numPixels()) + j) & 255));
     }
-    strip.show(); // Update strip with new contents
-    delay(wait);  // Pause for a moment
+    strip.show();
+    delay(wait);
   }
 }
 
 
 void alert() {
-  rainbow(500); // 500 = delay in ms
+  rainbowCycle(20); // 500 = delay in ms
   sendResponse("OK");
 }
 
