@@ -116,7 +116,7 @@ void setup(void)
     /* Perform a factory reset to make sure everything is in a known state */
     Serial.println(F("Performing a factory reset: "));
     if ( ! ble.factoryReset() ){
-      error(F("Couldn't factory reset"));
+      Serial.println("Couldn't factory reset");
     }
   }
 
@@ -197,13 +197,20 @@ uint32_t Wheel(byte WheelPos) {
 void rainbowCycle(uint8_t wait) {
   uint16_t i, j;
  
-  for(j=0; j<256*5; j++) { // 5 cycles of all colors on wheel
+  for(j=0; j<256*1; j++) { // 1 cycles of all colors on wheel
     for(i=0; i< strip.numPixels(); i++) {
       strip.setPixelColor(i, Wheel(((i * 256 / strip.numPixels()) + j) & 255));
     }
     strip.show();
     delay(wait);
   }
+  // back to off:
+
+  for(i=0; i< strip.numPixels(); i++) {
+    strip.setPixelColor(i, strip.Color(0,0,0));
+  }
+  strip.show();
+
 }
 
 
