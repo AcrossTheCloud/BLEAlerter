@@ -42,7 +42,7 @@
 #include "BluefruitConfig.h"
 
 #define FACTORYRESET_ENABLE     1
-#define NEOPIXEL_VERSION_STRING "Neopixel v2.0"
+#define NEOPIXEL_VERSION_STRING "Neopixel v2.0\n"
 #define LED_PIN 8   /* Pin used to drive the NeoPixels */
 #define LED_COUNT 1
 
@@ -71,7 +71,7 @@ Adafruit_BluefruitLE_UART ble(Serial1, BLUEFRUIT_UART_MODE_PIN);
 
 // A small helper
 void error(const __FlashStringHelper*err) {
-  Serial.println(err);
+  if (Serial) Serial.println(err);
   while (1);
 }
 
@@ -81,7 +81,7 @@ void serial_printf(const char * format, ...) {
   va_start(args, format);
   vsnprintf(buffer, sizeof(buffer), format, args);
   va_end(args);
-  Serial.print(buffer);
+  if (Serial) Serial.print(buffer);
 }
 
 
@@ -93,62 +93,62 @@ void serial_printf(const char * format, ...) {
 /**************************************************************************/
 void setup(void)
 {
-  while (!Serial);  // required for Flora & Micro
+
   delay(500);
 
-  Serial.begin(115200);
+  if (Serial) Serial.begin(115200);
+  
+  ble.verbose(false); 
 
   strip.begin();
   strip.setBrightness(50);
   strip.show(); // Initialize all pixels to 'off'
 
   /* Initialise the module */
-  Serial.print(F("Initialising the Bluefruit LE module: "));
+  if (Serial) Serial.print(F("Initialising the Bluefruit LE module: "));
 
   if ( !ble.begin(VERBOSE_MODE) )
   {
     error(F("Couldn't find Bluefruit, make sure it's in CoMmanD mode & check wiring?"));
   }
-  Serial.println( F("OK!") );
+  if (Serial) Serial.println( F("OK!") );
 
   if ( FACTORYRESET_ENABLE )
   {
     /* Perform a factory reset to make sure everything is in a known state */
-    Serial.println(F("Performing a factory reset: "));
+    if (Serial) Serial.println(F("Performing a factory reset: "));
     if ( ! ble.factoryReset() ){
-      Serial.println("Couldn't factory reset");
+      if (Serial) Serial.println("Couldn't factory reset");
     }
   }
 
   /* Disable command echo from Bluefruit */
   ble.echo(false);
 
-  Serial.println("Requesting Bluefruit info:");
-  /* Print Bluefruit information */
-  ble.info();
+  if (Serial) {
+    Serial.println("Requesting Bluefruit info:");
+    /* Print Bluefruit information */
+    ble.info();
+  }
 
-  ble.verbose(false);  // debug info is a little annoying after this point!
 
   /* Wait for connection */
   while (! ble.isConnected()) {
       delay(500);
   }
 
-  Serial.println(F("******************************"));
 
   // LED Activity command is only supported from 0.6.6
   if ( ble.isVersionAtLeast(MINIMUM_FIRMWARE_VERSION) )
   {
     // Change Mode LED Activity
-    Serial.println(F("Change LED activity to " MODE_LED_BEHAVIOUR));
     ble.sendCommandCheckOK("AT+HWModeLED=" MODE_LED_BEHAVIOUR);
   }
 
   // Set module to DATA mode
-  Serial.println( F("Switching to DATA mode!") );
+
   ble.setMode(BLUEFRUIT_MODE_DATA);
 
-  Serial.println(F("******************************"));
 }
 
 void loop()
@@ -175,7 +175,6 @@ void loop()
 
 
 void commandVersion() {
-  Serial.println(F("Command: Version check"));
   sendResponse(NEOPIXEL_VERSION_STRING);
 }
 
@@ -216,10 +215,9 @@ void rainbowCycle(uint8_t wait) {
 
 void alert() {
   rainbowCycle(20); // 500 = delay in ms
-  sendResponse("OK");
+  sendResponse("OK\n");
 }
 
 void sendResponse(char const *response) {
-    serial_printf("Send Response: %s\n", response);
     ble.write(response, strlen(response)*sizeof(char));
 }
