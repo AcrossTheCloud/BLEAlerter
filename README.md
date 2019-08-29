@@ -37,11 +37,12 @@ Note that the neopixel ring has 2x 5V and 2x GND connectors for daisy chaining, 
 
 ## software configuration 
 ### esp32
-You will need to update the transmitter code to look for the MAC address of your specific bluefruit LE, which can be found at https://github.com/AcrossTheCloud/BLEAlerter/blob/e13b4029e2bdf608566512221fb8cc17100353cc/transmitter/transmitter.ino#L16
-Alternatively (if you only have one bluefruit LE in your general vicinity) you could remove this line https://github.com/AcrossTheCloud/BLEAlerter/blob/e13b4029e2bdf608566512221fb8cc17100353cc/transmitter/transmitter.ino#L108
+You will need to update the transmitter code to look for the MAC address of your specific bluefruit LE, which can be found at [this line of code](https://github.com/AcrossTheCloud/BLEAlerter/blob/e13b4029e2bdf608566512221fb8cc17100353cc/transmitter/transmitter.ino#L16). The MAC address can be found via a BLE Scanner (except on iOS).
+
+Alternatively (if you only have one bluefruit LE in your general vicinity) you could remove [this line]( https://github.com/AcrossTheCloud/BLEAlerter/blob/e13b4029e2bdf608566512221fb8cc17100353cc/transmitter/transmitter.ino#L108)
 
 ### flora
-If you're using a different neopixel setup, you will need to update the number of pixels https://github.com/AcrossTheCloud/BLEAlerter/blob/e13b4029e2bdf608566512221fb8cc17100353cc/detector/detector.ino#L47 and the final parameter for frequency and colour format at https://github.com/AcrossTheCloud/BLEAlerter/blob/e13b4029e2bdf608566512221fb8cc17100353cc/detector/detector.ino#L50
+If you're using a different neopixel setup, you will need to update the [number of pixels]( https://github.com/AcrossTheCloud/BLEAlerter/blob/e13b4029e2bdf608566512221fb8cc17100353cc/detector/detector.ino#L47) and the final parameter for frequency and colour format at this [function call](https://github.com/AcrossTheCloud/BLEAlerter/blob/e13b4029e2bdf608566512221fb8cc17100353cc/detector/detector.ino#L50)
 
 
 
