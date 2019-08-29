@@ -159,5 +159,6 @@ void loop() {
     BLEDevice::getScan()->start(0);  // start scan after disconnect
   }
   
-  delay(5120); // Delay 256 colours * (20ms / colour) * 1 pixel
+  delay(2560); // Delay 256 colours * (10ms / colour)
+  
 } // End of loop
