@@ -44,6 +44,6 @@ Alternatively (if you only have one bluefruit LE in your general vicinity) you c
 ### flora
 If you're using a different neopixel setup, you will need to update the [number of pixels]( https://github.com/AcrossTheCloud/BLEAlerter/blob/e13b4029e2bdf608566512221fb8cc17100353cc/detector/detector.ino#L47) and the final parameter for frequency and colour format at this [function call](https://github.com/AcrossTheCloud/BLEAlerter/blob/e13b4029e2bdf608566512221fb8cc17100353cc/detector/detector.ino#L50)
 
-
-
+## flashing the software
+Be sure to select the right board under tools > board, and also the right serial port. Note that I had trouble flashing to the flora via USB3.1 port on my Mac; YMMV with a USB-C (3.1) to USB-A (2.0) hub, in my case even that didn't work and I ran Arduino on a Rasberry Pi 3B for flashing to the flora, however there's no arm64 or arm32 cross-compiling toolchain for esp32 so the esp32 I flashed from my Mac.
 
