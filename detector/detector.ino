@@ -43,11 +43,11 @@
 
 #define FACTORYRESET_ENABLE     1
 #define NEOPIXEL_VERSION_STRING "Neopixel v2.0\n"
-#define LED_PIN 8   /* Pin used to drive the NeoPixels */
-#define LED_COUNT 1
+#define LED_PIN 6   /* Pin used to drive the NeoPixels */
+#define LED_COUNT 24
 
 
-Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_RGBW + NEO_KHZ800);
 
 // Create the bluefruit object, either software serial...uncomment these lines
 /*
@@ -196,7 +196,7 @@ uint32_t Wheel(byte WheelPos) {
 void rainbowCycle(uint8_t wait) {
   uint16_t i, j;
  
-  for(j=0; j<256*1; j++) { // 1 cycles of all colors on wheel
+  for(j=0; j<256*1; j++) { // 1 cycle of all colors on wheel
     for(i=0; i< strip.numPixels(); i++) {
       strip.setPixelColor(i, Wheel(((i * 256 / strip.numPixels()) + j) & 255));
     }
@@ -214,7 +214,7 @@ void rainbowCycle(uint8_t wait) {
 
 
 void alert() {
-  rainbowCycle(20); // 500 = delay in ms
+  rainbowCycle(10); // 10 = delay in ms
   sendResponse("OK\n");
 }
 
